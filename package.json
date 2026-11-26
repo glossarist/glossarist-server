@@ -14,5 +14,9 @@
     "typescript": "^5",
     "vitest": "^3",
     "wrangler": "^4"
+  },
+  "dependencies": {
+    "glossarist-sparql": "github:glossarist/glossarist-sparql#main",
+    "glossarist-mcp": "github:glossarist/glossarist-mcp#main"
   }
 }

@@ -1,7 +1,7 @@
 // /sparql — SPARQL 1.1 query endpoint over the roll-our-own engine.
 // Store hydration: R2 per-register aggregates (jsonld) for the current build,
 // cached per isolate, keyed by build id. Read-only by design.
-import { QuadStore, readJsonld, parseQuery, evaluate, SparqlSyntaxError, SparqlTimeoutError, SparqlCostError, serializeTurtle } from "glossarist-sparql";
+import { QuadStore, readJsonld, readJsonldIntoStore, parseQuery, evaluate, SparqlSyntaxError, SparqlTimeoutError, SparqlCostError, serializeTurtle } from "glossarist-sparql";
 import type { Env } from "./types.js";
 import { problem } from "./http.js";
 

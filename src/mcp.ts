@@ -52,8 +52,8 @@ class D1Backend implements Backend {
       identifier: (row.identifier as string) ?? null,
       status: (row.status as string) ?? "valid",
       designations: Object.fromEntries((designations.results as { lang: string; designation: string }[]).map((d) => [d.lang, d.designation])),
-      relations: relations.results,
-      sources: sources.results,
+      relations: relations.results as { subject: string; predicate: string; object: string }[],
+      sources: sources.results as { urn: string; clause: string | null; kind: string | null }[],
       artifacts: reg?.uri_base ? {
         jsonld: `${reg.uri_base}/data/${register}/concepts/${uuid}.jsonld`,
         ttl: `${reg.uri_base}/data/${register}/concepts/${uuid}.ttl`,

@@ -1,6 +1,9 @@
 import type { Env, Route } from "./types.js";
 import { json, problem } from "./http.js";
 import { pickFormat, contentTypeFor } from "./negotiate.js";
+import { sparqlEndpoint } from "./sparql.js";
+import { mcpEndpoint } from "./mcp.js";
+import { llmsTxt } from "./llms-txt.js";
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -227,6 +230,9 @@ function openapi(_req: Request): Response {
 
 export const routes: Route[] = [
   ["GET", /^\/healthz$/, () => json({ ok: true })],
+  ["GET", /^\/sparql$/, sparqlEndpoint],
+  ["POST", /^\/sparql$/, sparqlEndpoint],
+  ["POST", /^\/mcp$/, mcpEndpoint],
   ["GET", /^\/llms\.txt$/, llmsTxt],
   ["GET", /^\/openapi\.json$/, openapi],
   ["GET", /^\/v1\/registers$/, registers],
