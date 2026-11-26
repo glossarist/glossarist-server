@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS registers(id TEXT PRIMARY KEY, title TEXT, subtitle TEXT, uri_base TEXT, languages TEXT, concept_count INTEGER DEFAULT 0, edition TEXT);
+CREATE TABLE IF NOT EXISTS concepts(register TEXT, uuid TEXT, identifier TEXT, status TEXT, title_eng TEXT, PRIMARY KEY(register, uuid));
+CREATE INDEX IF NOT EXISTS idx_concepts_reg ON concepts(register, identifier);
+CREATE TABLE IF NOT EXISTS designations(register TEXT, uuid TEXT, lang TEXT, designation TEXT, normative_status TEXT);
+CREATE INDEX IF NOT EXISTS idx_desig_reg ON designations(register, lang, designation);
+CREATE INDEX IF NOT EXISTS idx_desig_uuid ON designations(register, uuid);
+CREATE TABLE IF NOT EXISTS relations(register TEXT, subject TEXT, predicate TEXT, object TEXT);
+CREATE INDEX IF NOT EXISTS idx_rel_sub ON relations(register, subject);
+CREATE INDEX IF NOT EXISTS idx_rel_obj ON relations(register, object);
+CREATE TABLE IF NOT EXISTS lineage(register TEXT, from_uuid TEXT, to_uuid TEXT, kind TEXT, note TEXT);
+CREATE TABLE IF NOT EXISTS sources(register TEXT, urn TEXT, record TEXT);
+CREATE INDEX IF NOT EXISTS idx_sources ON sources(register, urn);
+CREATE TABLE IF NOT EXISTS concept_sources(register TEXT, uuid TEXT, urn TEXT, clause TEXT, kind TEXT);
+CREATE INDEX IF NOT EXISTS idx_csrc ON concept_sources(register, urn);
+CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
