@@ -69,9 +69,11 @@ export async function staticSite(req: Request, env: Env, url: URL): Promise<Resp
   if (!build) return problem(503, "not_ingested", "No build ingested yet");
 
   const base = `builds/${build.value}/${mapped.key}`;
+  let contentType = mapped.contentType;
   let obj = await env.ARTIFACTS.get(base);
   if (!obj && (mapped.contentType.startsWith("text/html") || !mapped.key.includes("."))) {
     obj = await env.ARTIFACTS.get(`${base}/index.html`); // clean URLs: /learn → /learn/index.html
+    if (obj) contentType = "text/html; charset=utf-8";
   }
   if (!obj) {
     const notFound = await env.ARTIFACTS.get(`builds/${build.value}/site/vocab/404.html`);
@@ -85,7 +87,7 @@ export async function staticSite(req: Request, env: Env, url: URL): Promise<Resp
   }
 
   const headers: Record<string, string> = {
-    "content-type": mapped.contentType,
+    "content-type": contentType,
     "cache-control": mapped.immutable ? "public, max-age=31536000, immutable" : "public, max-age=600",
     etag: `"site-${build.value}-${mapped.key}"`,
     "access-control-allow-origin": "*",
