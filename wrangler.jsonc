@@ -2,6 +2,7 @@
   "name": "glossarist-server",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
+  "routes": [{ "pattern": "vocab.oimlsmart.org", "custom_domain": true }],
   "assets": { "directory": "./public" },
   "d1_databases": [{ "binding": "DB", "database_name": "glossarist", "database_id": "19e11de1-b39c-4434-b93c-a4633ba0068f" }],
   "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "glossarist-artifacts" }],
