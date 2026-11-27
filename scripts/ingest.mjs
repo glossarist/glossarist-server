@@ -171,22 +171,39 @@ if (!PUSH) { console.log("dry run complete"); process.exit(0); }
 // --- R2 uploads (concurrent: the site tree is tens of thousands of objects;
 // sequential wrangler spawns would take hours) ------------------------------
 import { execFile } from "node:child_process";
+import { sleep } from "node:timers/promises";
 const R2_CONCURRENCY = 12;
+// local binary, not npx: concurrent npx invocations race on the npm cache
+const WRANGLER_BIN = resolve("node_modules/.bin/wrangler");
+const wranglerArgs = (key, path) =>
+  existsSync(WRANGLER_BIN)
+    ? [WRANGLER_BIN, ["r2", "object", "put", `glossarist-artifacts/${key}`, "--file", path, "--remote"]]
+    : ["npx", ["wrangler", "r2", "object", "put", `glossarist-artifacts/${key}`, "--file", path, "--remote"]];
+const putOnce = ([bin, args]) => new Promise((res, rej) => {
+  execFile(bin, args, { env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: ACCOUNT }, stdio: "ignore", shell: process.platform === "win32" }, (err) => (err ? rej(err) : res()));
+});
 await (async () => {
   let idx = 0, done = 0;
+  const failed = [];
   const worker = async () => {
     while (idx < r2Keys.length) {
       const [key, path] = r2Keys[idx++];
-      await new Promise((res, rej) => {
-        execFile("npx", ["wrangler", "r2", "object", "put", `glossarist-artifacts/${key}`, "--file", path, "--remote"],
-          { env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: ACCOUNT }, stdio: "ignore", shell: process.platform === "win32" },
-          (err) => (err ? rej(err) : res()));
-      });
+      for (let attempt = 1; ; attempt++) {
+        try { await putOnce(wranglerArgs(key, path)); break; }
+        catch (e) {
+          if (attempt >= 3) { failed.push(key); console.error(`FAILED ${key}: ${String(e.message ?? e).slice(0, 120)}`); break; }
+          await sleep(2000 * attempt);
+        }
+      }
       done++;
       if (done % 500 === 0) console.log(`r2 uploads: ${done}/${r2Keys.length}`);
     }
   };
   await Promise.all(Array.from({ length: R2_CONCURRENCY }, worker));
+  if (failed.length) {
+    console.error(`r2 uploads FAILED for ${failed.length} objects — rerun the ingest to retry (uploads are idempotent)`);
+    process.exit(1);
+  }
 })();
 console.log(`r2 uploads complete: ${r2Keys.length}`);
 
