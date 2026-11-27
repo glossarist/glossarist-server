@@ -1,0 +1,79 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "Glossarist Vocab API — event and streaming surface",
+    "version": "1.1.0",
+    "description": "AsyncAPI description of the streaming and event-driven surfaces of the Glossarist vocabulary service. The REST surface is described separately (OpenAPI at /openapi.json).",
+    "contact": { "name": "Glossarist", "url": "https://glossarist.org" },
+    "license": { "name": "BSD-2-Clause" }
+  },
+  "servers": {
+    "production": {
+      "host": "vocab.oimlsmart.org",
+      "protocol": "https",
+      "description": "Production deployment (custom domain; workers.dev fallback serves the same documents)."
+    }
+  },
+  "channels": {
+    "mcpStreamableHttp": {
+      "address": "/mcp",
+      "description": "Model Context Protocol over Streamable HTTP: the client POSTs JSON-RPC 2.0 messages; the server responds either with a single JSON response or, for streaming-capable requests, an SSE (text/event-stream) channel carrying JSON-RPC messages. Protocol version negotiated at initialize (2026-07-28, fallback 2025-06-18).",
+      "messages": {
+        "jsonRpcRequest": {
+          "contentType": "application/json",
+          "title": "JSON-RPC 2.0 request / notification",
+          "payload": { "type": "object", "required": ["jsonrpc", "method"], "properties": { "jsonrpc": { "const": "2.0" }, "id": { "oneOf": [{ "type": "string" }, { "type": "number" }] }, "method": { "type": "string", "examples": ["initialize", "tools/list", "tools/call", "ping", "notifications/initialized"] }, "params": { "type": "object" } } }
+        },
+        "jsonRpcResponse": {
+          "contentType": "application/json",
+          "title": "JSON-RPC 2.0 response (or SSE event over the stream)",
+          "payload": { "type": "object", "required": ["jsonrpc", "id"], "properties": { "jsonrpc": { "const": "2.0" }, "id": { "oneOf": [{ "type": "string" }, { "type": "number" }] }, "result": { "type": "object" }, "error": { "type": "object", "properties": { "code": { "type": "number" }, "message": { "type": "string" } } } } }
+        },
+        "sseEvent": {
+          "contentType": "text/event-stream",
+          "title": "Server-Sent Events channel",
+          "description": "When the server answers with an event stream, each SSE `data:` event carries one JSON-RPC response message (schema: jsonRpcResponse). The stream terminates per the MCP Streamable HTTP rules."
+        }
+      }
+    },
+    "registerBuildPublished": {
+      "address": "/hooks/register.build-published",
+      "description": "Webhook (planned, editorial workflow milestone): fired when a new build is ingested and the served indexes + static site flip to it. Subscribers: federation harvesters (DCAT re-harvest), CI caches, downstream replicas. Delivery: HTTP POST, JSON body, HMAC-SHA256 signature header (X-Glossarist-Signature) against the subscriber's shared secret; at-least-once with exponential-backoff retries for 24h.",
+      "messages": {
+        "buildPublished": {
+          "contentType": "application/json",
+          "title": "Register build published",
+          "payload": { "type": "object", "required": ["buildId", "publishedAt", "registers"], "properties": { "buildId": { "type": "string" }, "publishedAt": { "type": "string", "format": "date-time" }, "registers": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "conceptCount": { "type": "number" }, "edition": { "type": "string" } } } }, "dcat": { "type": "string", "description": "URL of the refreshed DCAT catalogue" }, "shaclPass": { "type": "string", "description": "pass | vacuous-pass | validator-unavailable (honest gate status)" } } }
+        }
+      }
+    },
+    "proposalStateChanged": {
+      "address": "/hooks/proposal.state-changed",
+      "description": "Webhook (planned, editorial workflow milestone): fired on every ISO 19135 proposal state transition (draft → submitted → under-review → accepted / rejected / withdrawn). Subscribers: proposal authors, control-body watchers, notification fan-out.",
+      "messages": {
+        "proposalStateChange": {
+          "contentType": "application/json",
+          "title": "Proposal state changed",
+          "payload": { "type": "object", "required": ["proposalId", "register", "from", "to", "at"], "properties": { "proposalId": { "type": "string" }, "register": { "type": "string" }, "from": { "type": "string" }, "to": { "type": "string" }, "at": { "type": "string", "format": "date-time" }, "actor": { "type": "string" }, "pullRequestUrl": { "type": "string", "description": "the git-SSOT round-trip PR" } } }
+        }
+      }
+    }
+  },
+  "operations": {
+    "onMcpStreamableHttp": {
+      "action": "receive",
+      "channel": { "$ref": "#/channels/mcpStreamableHttp" },
+      "messages": ["{ \"$ref\": \"#/channels/mcpStreamableHttp/messages/jsonRpcRequest\" }", "{ \"$ref\": \"#/channels/mcpStreamableHttp/messages/jsonRpcResponse\" }", "{ \"$ref\": \"#/channels/mcpStreamableHttp/messages/sseEvent\" }"]
+    },
+    "onRegisterBuildPublished": {
+      "action": "send",
+      "channel": { "$ref": "#/channels/registerBuildPublished" },
+      "messages": ["{ \"$ref\": \"#/channels/registerBuildPublished/messages/buildPublished\" }"]
+    },
+    "onProposalStateChanged": {
+      "action": "send",
+      "channel": { "$ref": "#/channels/proposalStateChanged" },
+      "messages": ["{ \"$ref\": \"#/channels/proposalStateChanged/messages/proposalStateChange\" }"]
+    }
+  }
+}
