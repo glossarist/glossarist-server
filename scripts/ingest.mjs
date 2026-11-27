@@ -168,19 +168,6 @@ console.log(`r2 objects: ${r2Keys.length}`);
 
 if (!PUSH) { console.log("dry run complete"); process.exit(0); }
 
-// --- write batched SQL + execute ------------------------------------------
-const BATCH = 400;
-const dirOut = resolve("artifacts/seed");
-mkdirSync(dirOut, { recursive: true });
-const files = [];
-for (let i = 0; i < statements.length; i += BATCH) {
-  const f = join(dirOut, `seed-${String(i / BATCH).padStart(4, "0")}.sql`);
-  writeFileSync(f, statements.slice(i, i + BATCH).join("\n"));
-  files.push(f);
-}
-console.log(`sql batches: ${files.length}`);
-for (const f of files) wr(["d1", "execute", "glossarist", "--remote", "-y", "--file", f], { quiet: true });
-
 // --- R2 uploads (concurrent: the site tree is tens of thousands of objects;
 // sequential wrangler spawns would take hours) ------------------------------
 import { execFile } from "node:child_process";
@@ -202,6 +189,20 @@ await (async () => {
   await Promise.all(Array.from({ length: R2_CONCURRENCY }, worker));
 })();
 console.log(`r2 uploads complete: ${r2Keys.length}`);
+
+// --- write batched SQL + execute ------------------------------------------
+const BATCH = 400;
+const dirOut = resolve("artifacts/seed");
+mkdirSync(dirOut, { recursive: true });
+const files = [];
+for (let i = 0; i < statements.length; i += BATCH) {
+  const f = join(dirOut, `seed-${String(i / BATCH).padStart(4, "0")}.sql`);
+  writeFileSync(f, statements.slice(i, i + BATCH).join("\n"));
+  files.push(f);
+}
+console.log(`sql batches: ${files.length}`);
+for (const f of files) wr(["d1", "execute", "glossarist", "--remote", "-y", "--file", f], { quiet: true });
+
 wr(["kv", "key", "put", "build_id", BUILD_ID, "--namespace-id", "3b2f36d46cbf490f974dc6121b3428b4", "--remote"], { quiet: false });
 rmSync(dirOut, { recursive: true, force: true });
 console.log(`INGESTED build ${BUILD_ID}: ${entries.length} registers, ${conceptRows} concepts, ${r2Keys.length} R2 objects`);
