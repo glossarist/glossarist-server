@@ -10,12 +10,17 @@ for (const c of spec.cases) {
   try {
     const res = await fetch(base + c.path, {
       method: c.method ?? "GET",
-      headers: { accept: "application/json" },
+      headers: { accept: c.accept ?? "application/json" },
       body: c.body ? JSON.stringify(c.body) : undefined,
     });
     const okStatus = res.status === c.expect.status;
     let okExtra = true;
-    if (c.expect["registers-min"] || c.expect["hits-min"] || c.expect.hits !== undefined) {
+    if (c.expect.contains) {
+      const text = await res.text();
+      okExtra = c.expect.contains.every((s) => text.includes(s));
+    }
+    if (c.expect["content-type"]) okExtra = (res.headers.get("content-type") ?? "").includes(c.expect["content-type"]);
+    if (okExtra && (c.expect["registers-min"] || c.expect["hits-min"] || c.expect.hits !== undefined)) {
       const body = await res.json();
       const n = body.registers?.length ?? body.hits?.length ?? -1;
       if (c.expect["registers-min"] !== undefined) okExtra = n >= c.expect["registers-min"];

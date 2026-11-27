@@ -4,6 +4,9 @@ import { pickFormat, contentTypeFor } from "./negotiate.js";
 import { sparqlEndpoint } from "./sparql.js";
 import { mcpEndpoint } from "./mcp.js";
 import { llmsTxt } from "./llms-txt.js";
+import { dcatEndpoint } from "./dcat.js";
+import { provEndpoint } from "./prov.js";
+import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -224,6 +227,10 @@ function openapi(_req: Request): Response {
       "/id/{register}/concept/{uuid}": { get: { summary: "Dereferenceable concept IRI (conneg; RDF forms 303 to published artifacts)", responses: { "200": { description: "json view" }, "303": { description: "artifact pointer" } } } },
       "/sparql": { get: { summary: "SPARQL 1.1 query (roll-our-own engine, read-only)", responses: { "200": { description: "ok" } } } },
       "/mcp": { post: { summary: "MCP over Streamable HTTP", responses: { "200": { description: "ok" } } } },
+      "/dcat": { get: { summary: "DCAT catalog (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" }, "406": { description: "format not offered" } } } },
+      "/prov": { get: { summary: "PROV-O build provenance (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" } } } },
+      "/ontologies": { get: { summary: "Ontology artifact index", responses: { "200": { description: "ok" } } } },
+      "/ontologies/{id}": { get: { summary: "Ontology document (conneg: JSON-LD default, Turtle)", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
     },
   });
 }
@@ -233,6 +240,10 @@ export const routes: Route[] = [
   ["GET", /^\/sparql$/, sparqlEndpoint],
   ["POST", /^\/sparql$/, sparqlEndpoint],
   ["POST", /^\/mcp$/, mcpEndpoint],
+  ["GET", /^\/dcat$/, dcatEndpoint],
+  ["GET", /^\/prov$/, provEndpoint],
+  ["GET", /^\/ontologies$/, ontologiesIndex],
+  ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
   ["GET", /^\/openapi\.json$/, openapi],
   ["GET", /^\/v1\/registers$/, registers],

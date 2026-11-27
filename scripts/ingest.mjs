@@ -12,6 +12,7 @@ const opt = (k) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 const DATA = resolve(opt("data") ?? "../oimlsmart/vocab/dist/data");
+const ONTOLOGIES = opt("ontologies") ? resolve(opt("ontologies")) : null;
 const BUILD_ID = opt("build-id") ?? `local-${new Date().toISOString().replace(/[:.]/g, "-")}`;
 const PUSH = args.includes("--push");
 const ACCOUNT = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -131,6 +132,14 @@ for (const reg of entries) {
 }
 
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('build_id', ${sql(BUILD_ID)});`);
+
+// ontology artifacts (e.g. --ontologies <dir with gloss.ttl + gloss.jsonld>)
+if (ONTOLOGIES) {
+  if (!existsSync(ONTOLOGIES)) { console.error(`--ontologies dir not found: ${ONTOLOGIES}`); process.exit(1); }
+  for (const f of readdirSync(ONTOLOGIES).filter((n) => n.endsWith(".ttl") || n.endsWith(".jsonld"))) {
+    r2Keys.push([`builds/${BUILD_ID}/ontologies/${f}`, join(ONTOLOGIES, f)]);
+  }
+}
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('generated_at', ${sql(new Date().toISOString())});`);
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('registers', ${sql(JSON.stringify(entries))});`);
 // lineage coverage: honest zero unless lineage rows exist

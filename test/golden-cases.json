@@ -11,6 +11,14 @@
     { "name": "sparql-write-refusal", "path": "/sparql?query=DELETE%20WHERE%20%7B%20%3Fs%20%3Fp%20%3Fo%20%7D", "expect": { "status": 400 } },
     { "name": "sparql-french-answer", "path": "/sparql?query=PREFIX%20skos%3A%20%3Chttp%3A%2F%2Fwww.w3.org%2F2004%2F02%2Fskos%2Fcore%23%3E%20SELECT%20%3Fl%20WHERE%20%7B%20%3Fc%20skos%3AprefLabel%20%3Fl%20FILTER%20(lang(%3Fl)%20%3D%20%22fra%22)%20%7D%20LIMIT%203", "expect": { "status": 200, "json-results": true } },
     { "name": "mcp-initialize", "path": "/mcp", "method": "POST", "body": { "jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {} }, "expect": { "status": 200, "server-info": "glossarist-mcp" } },
-    { "name": "mcp-tools-list", "path": "/mcp", "method": "POST", "body": { "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }, "expect": { "status": 200, "tools-min": 6 } }
+    { "name": "mcp-tools-list", "path": "/mcp", "method": "POST", "body": { "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }, "expect": { "status": 200, "tools-min": 6 } },
+    { "name": "dcat-jsonld", "path": "/dcat", "accept": "application/ld+json", "expect": { "status": 200, "content-type": "application/ld+json", "contains": ["dcat:Catalog", "JCGM"] } },
+    { "name": "dcat-turtle", "path": "/dcat", "accept": "text/turtle", "expect": { "status": 200, "content-type": "text/turtle", "contains": ["dcat:Catalog", "JCGM"] } },
+    { "name": "dcat-format-refusal", "path": "/dcat", "accept": "text/csv", "expect": { "status": 406, "problem": true } },
+    { "name": "prov-jsonld", "path": "/prov", "accept": "application/ld+json", "expect": { "status": 200, "content-type": "application/ld+json", "contains": ["prov:Activity", "prov:Entity"] } },
+    { "name": "ontologies-index", "path": "/ontologies", "expect": { "status": 200, "contains": ["gloss"] } },
+    { "name": "ontologies-gloss-jsonld", "path": "/ontologies/gloss", "accept": "application/ld+json", "expect": { "status": 200, "content-type": "application/ld+json" } },
+    { "name": "ontologies-gloss-turtle", "path": "/ontologies/gloss", "accept": "text/turtle", "expect": { "status": 200, "content-type": "text/turtle", "contains": ["@prefix", "gloss"] } },
+    { "name": "unknown-ontology-404", "path": "/ontologies/does-not-exist", "expect": { "status": 404, "problem": true } }
   ]
 }
