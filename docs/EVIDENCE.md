@@ -21,15 +21,16 @@ Denominator: a 26-item query-surface checklist appropriate to read-only vocabula
 | Family | Implemented | Missing (honest) |
 |---|---|---|
 | Query forms | SELECT, ASK, CONSTRUCT (3/4) | DESCRIBE |
-| Graph patterns | BGP, OPTIONAL, UNION, VALUES (4/5) | MINUS |
+| Graph patterns | BGP, OPTIONAL, UNION, VALUES, MINUS (5/5) | — |
+| Solution composition | subqueries, BIND, EXISTS/NOT EXISTS (3/3) | — |
 | Expressions | FILTER, &&, \|\|, !, regex/str/lang/datatype/bound, = != < > <= >= (3/3) | — |
 | Solution modifiers | DISTINCT, ORDER BY ASC/DESC, LIMIT, OFFSET (4/4) | — |
 | Prologue | PREFIX, BASE (2/2) | — |
 | Datasets | — (0/2) | FROM, FROM NAMED/GRAPH (single-graph store by design) |
-| Advanced | — (0/5) | subqueries, BIND, EXISTS/NOT EXISTS, property paths, aggregates/GROUP BY/HAVING |
-| Projection | plain variables (0/1) | (expr AS ?var) |
+| Advanced | — (0/3) | property paths, aggregates/GROUP BY/HAVING |
+| Projection | plain variables (1/1) | (expr AS ?var) — semantic need partly covered by BIND |
 
-**Coverage: 18/26 = 69% of the defined read-access surface.** SPARQL UPDATE is out of scope permanently — the endpoint is read-only by design (writes go through the register procedure). Roadmap: https://github.com/glossarist/docs/blob/main/cookbook/sparql-cookbook.md#5-engine-roadmap-honest-non-coverage. Two gaps (`<=`/`>=`, unary `!`) were found by live-probing the production endpoint while verifying the cookbook and fixed in glossarist-sparql#14 (0.1.1). 31/31 engine tests; cookbook queries executed live.
+**Coverage after Wave 1 (glossarist-sparql#19–#21): 21/26 = 81%** of the defined read-access surface — subqueries, BIND, MINUS, EXISTS/NOT EXISTS added; a bench suite shipped (8 queries over a 5,000-quad fixture, 4.9 ms warm total; 49/49 engine tests green). Pre-Wave-1 figure corrected to 17/26 = 65% (the earlier "18/26" double-counted one row). The remaining 5 items — property paths and aggregates/GROUP BY/HAVING scheduled (#18); DESCRIBE; FROM/FROM NAMED require a multi-graph store redesign and are honestly unreachable on the current single-graph store. SPARQL UPDATE is out of scope permanently — the endpoint is read-only by design (writes go through the register procedure). Engine roadmap with runnable-gap notes: https://github.com/glossarist/docs/blob/main/cookbook/sparql-cookbook.md#5-engine-roadmap-honest-non-coverage. Two earlier gaps (`<=`/`>=`, unary `!`) were found by live-probing the production endpoint while verifying the cookbook and fixed in glossarist-sparql#14.
 
 ## Coverage
 - Registers ingested: 11 (VIM 1984–2012 lineage, VIML 1968–2022, oiml-complete). g18-2010/g18-202X pending their site-config inclusion in oimlsmart/vocab (OIML's own consolidation work — tracked).
