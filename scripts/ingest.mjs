@@ -140,6 +140,23 @@ if (ONTOLOGIES) {
     r2Keys.push([`builds/${BUILD_ID}/ontologies/${f}`, join(ONTOLOGIES, f)]);
   }
 }
+
+// static site tree (e.g. --site ../oimlsmart/vocab/dist) — served at /vocab/*
+// (the build's compiled base path) under the current build id (issue #25)
+const SITE = opt("site") ? resolve(opt("site")) : null;
+if (SITE) {
+  if (!existsSync(SITE)) { console.error(`--site dir not found: ${SITE}`); process.exit(1); }
+  const walk = (dir, rel) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      const childRel = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) walk(p, childRel);
+      else r2Keys.push([`builds/${BUILD_ID}/site/vocab/${childRel}`, p]);
+    }
+  };
+  walk(SITE, "");
+  console.log(`site files staged under site/vocab/`);
+}
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('generated_at', ${sql(new Date().toISOString())});`);
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('registers', ${sql(JSON.stringify(entries))});`);
 // lineage coverage: honest zero unless lineage rows exist
@@ -164,10 +181,27 @@ for (let i = 0; i < statements.length; i += BATCH) {
 console.log(`sql batches: ${files.length}`);
 for (const f of files) wr(["d1", "execute", "glossarist", "--remote", "-y", "--file", f], { quiet: true });
 
-// --- R2 uploads ------------------------------------------------------------
-for (const [key, path] of r2Keys) {
-  wr(["r2", "object", "put", `glossarist-artifacts/${key}`, "--file", path, "--remote"], { quiet: true });
-}
+// --- R2 uploads (concurrent: the site tree is tens of thousands of objects;
+// sequential wrangler spawns would take hours) ------------------------------
+import { execFile } from "node:child_process";
+const R2_CONCURRENCY = 12;
+await (async () => {
+  let idx = 0, done = 0;
+  const worker = async () => {
+    while (idx < r2Keys.length) {
+      const [key, path] = r2Keys[idx++];
+      await new Promise((res, rej) => {
+        execFile("npx", ["wrangler", "r2", "object", "put", `glossarist-artifacts/${key}`, "--file", path, "--remote"],
+          { env: { ...process.env, CLOUDFLARE_ACCOUNT_ID: ACCOUNT }, stdio: "ignore", shell: process.platform === "win32" },
+          (err) => (err ? rej(err) : res()));
+      });
+      done++;
+      if (done % 500 === 0) console.log(`r2 uploads: ${done}/${r2Keys.length}`);
+    }
+  };
+  await Promise.all(Array.from({ length: R2_CONCURRENCY }, worker));
+})();
+console.log(`r2 uploads complete: ${r2Keys.length}`);
 wr(["kv", "key", "put", "build_id", BUILD_ID, "--namespace-id", "3b2f36d46cbf490f974dc6121b3428b4", "--remote"], { quiet: false });
 rmSync(dirOut, { recursive: true, force: true });
 console.log(`INGESTED build ${BUILD_ID}: ${entries.length} registers, ${conceptRows} concepts, ${r2Keys.length} R2 objects`);

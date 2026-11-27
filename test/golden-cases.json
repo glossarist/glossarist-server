@@ -20,6 +20,10 @@
     { "name": "ontologies-index", "path": "/ontologies", "expect": { "status": 200, "contains": ["gloss"] } },
     { "name": "ontologies-gloss-jsonld", "path": "/ontologies/gloss", "accept": "application/ld+json", "expect": { "status": 200, "content-type": "application/ld+json" } },
     { "name": "ontologies-gloss-turtle", "path": "/ontologies/gloss", "accept": "text/turtle", "expect": { "status": 200, "content-type": "text/turtle", "contains": ["@prefix", "gloss"] } },
-    { "name": "unknown-ontology-404", "path": "/ontologies/does-not-exist", "expect": { "status": 404, "problem": true } }
+    { "name": "unknown-ontology-404", "path": "/ontologies/does-not-exist", "expect": { "status": 404, "problem": true } },
+    { "name": "site-index", "path": "/", "expect": { "status": 200, "content-type": "text/html" } },
+    { "name": "site-404", "path": "/vocab/no-such-page", "expect": { "status": 404, "content-type": "text/html" } },
+    { "name": "site-data-ttl", "path": "/vocab/data/versions.ttl", "expect": { "status": 200, "content-type": "text/turtle" } },
+    { "name": "api-404-stays-json", "path": "/v1/no-such-route", "expect": { "status": 404, "problem": true } }
   ]
 }

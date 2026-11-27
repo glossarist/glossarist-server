@@ -7,6 +7,11 @@ import { llmsTxt } from "./llms-txt.js";
 import { dcatEndpoint } from "./dcat.js";
 import { provEndpoint } from "./prov.js";
 import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
+import { staticSite } from "./site.js";
+
+// Paths that must always answer with Problem Details JSON, never the HTML
+// site's 404 page. Everything else falls through to the R2-backed static site.
+const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -262,6 +267,9 @@ export const routes: Route[] = [
 
 export function dispatch(req: Request, env: Env, url: URL): Promise<Response> {
   const route = routes.find(([m, re]) => m === req.method && re.test(url.pathname));
-  if (!route) return Promise.resolve(problem(404, "not_found", "No such route"));
+  if (!route) {
+    if (API_PATH.test(url.pathname)) return Promise.resolve(problem(404, "not_found", "No such route"));
+    return staticSite(req, env, url);
+  }
   return Promise.resolve(route[2](req, env, url)).then((res) => withConditional(res, req));
 }
