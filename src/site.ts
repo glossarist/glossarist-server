@@ -55,7 +55,7 @@ export function siteKeyFor(pathname: string): SiteKey {
   const ext = rel.includes(".") ? (rel.split(".").pop() ?? "").toLowerCase() : "";
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
   const immutable = rel.startsWith("_astro/") || rel.startsWith("_favicon") || ext === "woff2" || ext === "woff";
-  return { key: `site/vocab/${rel}`, contentType, immutable };
+  return { key: `site/vocab/${rel}`.replace(/\/$/, ""), contentType, immutable };
 }
 
 export async function staticSite(req: Request, env: Env, url: URL): Promise<Response> {
