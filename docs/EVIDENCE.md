@@ -3,7 +3,9 @@
 Deployment: https://vocab.oimlsmart.org (branded custom domain; same Cloudflare account as the worker) and https://glossarist-server.oimlsmart-06c.workers.dev (technical fallback).
 
 ## Golden suite (run against production)
-11 pass, 0 fail on both origins — registers catalog, French search, refusal cases (empty query, syntax error, SPARQL DELETE attempt), honest no-hits, 404 Problem Details, SPARQL SELECT + French answer, MCP initialize + tools/list. The suite grows to 21 cases with PR #27 (DCAT/PROV/ontologies conneg, ETag+304, format refusals).
+**24 pass, 0 fail on both origins** (vocab.oimlsmart.org + workers.dev) — registers catalog, ETag/304, French search, refusal cases (empty query, syntax error, SPARQL DELETE, format-not-offered), honest no-hits, 404 Problem Details, SPARQL SELECT + French answer with real-binding assertions, MCP initialize + tools/list, DCAT (JSON-LD + Turtle), /prov, /ontologies (index + gloss JSON-LD/Turtle), static site (index via clean-URL fallback, 404 page, data Turtle) and API-404-stays-JSON.
+
+Two production bugs the suite caught and killed: (1) If-None-Match used byte comparison while the runtime serves compressed responses with weakened validators — fixed to RFC 7232 weak comparison (#50); (2) directory URLs built a double-slash R2 key for the clean-URL index fallback, then served it as octet-stream — fixed at the mapping layer + fallback content-type (#51, #52).
 
 ## Latency (3 samples, 2026-11-27)
 | Route | Cold | Warm |
