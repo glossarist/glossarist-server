@@ -1,10 +1,39 @@
 // /mcp — MCP over Streamable HTTP (JSON-RPC 2.0, protocol 2025-06-18).
 // Tools from the glossarist-mcp package; backend reads D1 directly.
 import { createMcpHandler, MCP_TOOL_SCHEMAS, type Backend } from "glossarist-mcp";
+import { embedQuery } from "./semantic.js";
 import type { Env } from "./types.js";
 
 class D1Backend implements Backend {
   constructor(private readonly env: Env) {}
+
+  // Activates once the deployed glossarist-mcp schema list carries the tool
+  // (0.2.0); the implementation is ready ahead of that release.
+  async semanticSearch(q: string, opts?: { lang?: string; limit?: number }) {
+    const limit = Math.min(opts?.limit ?? 10, 25);
+    const vector = await embedQuery(this.env, q);
+    const queried = await this.env.VECTORIZE.query(vector, {
+      topK: limit * (opts?.lang ? 1 : 3),
+      returnMetadata: "all",
+      ...(opts?.lang ? { namespace: opts.lang } : {}),
+    });
+    const seen = new Set<string>();
+    return (queried.matches ?? [])
+      .filter((m: { id: string }) => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      })
+      .slice(0, limit)
+      .map((m: { id: string; score: number; metadata?: Record<string, unknown> }) => ({
+        register: m.metadata?.register as string,
+        uuid: m.metadata?.uuid as string,
+        lang: m.metadata?.lang as string,
+        designation: m.metadata?.designation as string,
+        identifier: (m.metadata?.identifier as string) || null,
+        score: Number(m.score.toFixed(4)),
+      }));
+  }
 
   async listRegisters() {
     const rows = await this.env.DB.prepare(
