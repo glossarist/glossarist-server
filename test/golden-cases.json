@@ -294,6 +294,18 @@
         "json-results": true,
         "bindings-min": 1
       }
+    },
+    {
+      "name": "asyncapi-json",
+      "path": "/asyncapi.json",
+      "expect": {
+        "status": 200,
+        "content-type": "application/json",
+        "contains": [
+          "mcpStreamableHttp",
+          "proposalStateChanged"
+        ]
+      }
     }
   ]
 }
