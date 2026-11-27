@@ -121,6 +121,22 @@ for (const reg of entries) {
     }
   }
 
+  // edition lineage (supersession) — present only where the dataset models it
+  const lineagePath = join(dir, "lineage.json");
+  if (existsSync(lineagePath)) {
+    let lineage;
+    try { lineage = JSON.parse(readFileSync(lineagePath, "utf8")); } catch { lineage = []; }
+    for (const e of Array.isArray(lineage) ? lineage : (lineage.proposed_edges ?? [])) {
+      const from = e.from_uuid ?? e.from ?? null;
+      const to = e.to_uuid ?? e.to ?? null;
+      if (!from || !to) continue;
+      lineageRows++;
+      statements.push(
+        `INSERT OR REPLACE INTO lineage(register, from_uuid, to_uuid, kind, note) VALUES (${sql(reg)}, ${sql(String(from))}, ${sql(String(to))}, ${sql(String(e.kind ?? "supersededBy"))}, ${sql(e.note ?? null)});`,
+      );
+    }
+  }
+
   // R2 aggregates + manifest + chunks (per-concept files stay on static assets)
   for (const f of [`${reg}.jsonld`, `${reg}.csv`, `${reg}.ttl`, "manifest.json", "bibliography.json", "index.json", "index-meta.json", "standards.json", "graph-nodes.json", "edges.json"]) {
     const p = join(dir, f);
