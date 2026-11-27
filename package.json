@@ -16,7 +16,7 @@
     "wrangler": "^4"
   },
   "dependencies": {
-    "glossarist-mcp": "^0.1.0",
+    "glossarist-mcp": "github:glossarist/glossarist-mcp#main",
     "glossarist-sparql": "^0.1.1"
   }
 }
