@@ -266,7 +266,8 @@ export const routes: Route[] = [
 ];
 
 export function dispatch(req: Request, env: Env, url: URL): Promise<Response> {
-  const route = routes.find(([m, re]) => m === req.method && re.test(url.pathname));
+  const method = req.method === "HEAD" ? "GET" : req.method;
+  const route = routes.find(([m, re]) => m === method && re.test(url.pathname));
   if (!route) {
     if (API_PATH.test(url.pathname)) return Promise.resolve(problem(404, "not_found", "No such route"));
     return staticSite(req, env, url);

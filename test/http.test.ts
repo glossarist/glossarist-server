@@ -38,3 +38,13 @@ describe("withConditional (ETag + 304)", () => {
     expect(notFound.headers.get("etag")).toBeNull();
   });
 });
+
+describe("dispatch (HEAD)", () => {
+  it("serves HEAD via GET routes with an ETag", async () => {
+    const { dispatch } = await import("../src/routes.js");
+    const url = new URL("https://x/healthz");
+    const res = await dispatch(new Request("https://x/healthz", { method: "HEAD" }), { DB: {} } as never, url);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("etag")).toMatch(/^"[0-9a-f]+"$/);
+  });
+});
