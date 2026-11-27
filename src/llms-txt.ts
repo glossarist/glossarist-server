@@ -14,6 +14,9 @@ export async function llmsTxt(_req: Request, env: Env): Promise<Response> {
     "- [SPARQL endpoint](/sparql): SPARQL 1.1 subset (read-only) — GET /sparql?query=…",
     "- [MCP](/mcp): Model Context Protocol over Streamable HTTP (JSON-RPC 2.0)",
     "- [Concept IRIs](/id/{register}/concept/{uuid}): dereferenceable, content-negotiated",
+    "- [DCAT catalog](/dcat): datasets, distributions, services, rights (JSON-LD/Turtle)",
+    "- [PROV-O provenance](/prov): what produced the current build",
+    "- [Ontologies](/ontologies): GLOSS ontology artifacts (JSON-LD/Turtle)",
     "",
     "## Registers",
     ...((regs.results as { id: string; title: string; concept_count: number }[]).map(
