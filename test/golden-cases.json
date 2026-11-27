@@ -2,6 +2,7 @@
   "description": "Golden e2e cases run against the live deployment after deploy (scripts/golden.mjs). Includes refusal behavior; French included per red-team pass 9.",
   "cases": [
     { "name": "registers-catalog", "path": "/v1/registers", "expect": { "status": 200, "registers-min": 11 } },
+    { "name": "registers-etag-304", "path": "/v1/registers", "expect": { "status": 200, "etag-304": true } },
     { "name": "search-french", "path": "/v1/search?q=mesurage&lang=fra", "expect": { "status": 200, "hits-min": 1 } },
     { "name": "search-refusal-empty", "path": "/v1/search", "expect": { "status": 400 } },
     { "name": "search-no-hits-honest", "path": "/v1/search?q=zzzqqqxxx", "expect": { "status": 200, "hits": 0 } },

@@ -33,6 +33,13 @@ for (const c of spec.cases) {
       const body = await res.json();
       okExtra = body.result?.serverInfo?.name === c.expect["server-info"];
     }
+    if (c.expect["etag-304"]) {
+      const first = await fetch(base + c.path, { headers: { accept: c.accept ?? "application/json" } });
+      const etag = first.headers.get("etag");
+      if (!etag) { fail++; console.log(`FAIL ${c.name} (no etag on first response)`); continue; }
+      const second = await fetch(base + c.path, { headers: { accept: c.accept ?? "application/json", "if-none-match": etag } });
+      okExtra = second.status === 304;
+    }
     if (okStatus && okExtra) { pass++; console.log(`PASS ${c.name}`); }
     else { fail++; console.log(`FAIL ${c.name} (status ${res.status})`); }
   } catch (e) {

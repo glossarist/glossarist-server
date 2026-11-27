@@ -1,5 +1,5 @@
 import type { Env, Route } from "./types.js";
-import { json, problem } from "./http.js";
+import { json, problem, withConditional } from "./http.js";
 import { pickFormat, contentTypeFor } from "./negotiate.js";
 import { sparqlEndpoint } from "./sparql.js";
 import { mcpEndpoint } from "./mcp.js";
@@ -260,8 +260,8 @@ export const routes: Route[] = [
   ["GET", /^\/id\/[^/]+\/concept\/[^/]+$/, iriRoute],
 ];
 
-export function dispatch(req: Request, env: Env, url: URL): Response | Promise<Response> {
+export function dispatch(req: Request, env: Env, url: URL): Promise<Response> {
   const route = routes.find(([m, re]) => m === req.method && re.test(url.pathname));
-  if (!route) return problem(404, "not_found", "No such route");
-  return route[2](req, env, url);
+  if (!route) return Promise.resolve(problem(404, "not_found", "No such route"));
+  return Promise.resolve(route[2](req, env, url)).then((res) => withConditional(res, req));
 }
