@@ -10,12 +10,17 @@ for (const c of spec.cases) {
   try {
     const res = await fetch(base + c.path, {
       method: c.method ?? "GET",
-      headers: { accept: "application/json" },
+      headers: { accept: c.accept ?? "application/json" },
       body: c.body ? JSON.stringify(c.body) : undefined,
     });
     const okStatus = res.status === c.expect.status;
     let okExtra = true;
-    if (c.expect["registers-min"] || c.expect["hits-min"] || c.expect.hits !== undefined) {
+    if (c.expect.contains) {
+      const text = await res.text();
+      okExtra = c.expect.contains.every((s) => text.includes(s));
+    }
+    if (c.expect["content-type"]) okExtra = (res.headers.get("content-type") ?? "").includes(c.expect["content-type"]);
+    if (okExtra && (c.expect["registers-min"] || c.expect["hits-min"] || c.expect.hits !== undefined)) {
       const body = await res.json();
       const n = body.registers?.length ?? body.hits?.length ?? -1;
       if (c.expect["registers-min"] !== undefined) okExtra = n >= c.expect["registers-min"];
@@ -27,6 +32,17 @@ for (const c of spec.cases) {
     if (c.expect["server-info"]) {
       const body = await res.json();
       okExtra = body.result?.serverInfo?.name === c.expect["server-info"];
+    }
+    if (c.expect["bindings-min"] !== undefined) {
+      const body = await res.json();
+      okExtra = (body.results?.bindings?.length ?? 0) >= c.expect["bindings-min"];
+    }
+    if (c.expect["etag-304"]) {
+      const first = await fetch(base + c.path, { headers: { accept: c.accept ?? "application/json" } });
+      const etag = first.headers.get("etag");
+      if (!etag) { fail++; console.log(`FAIL ${c.name} (no etag on first response)`); continue; }
+      const second = await fetch(base + c.path, { headers: { accept: c.accept ?? "application/json", "if-none-match": etag } });
+      okExtra = second.status === 304;
     }
     if (okStatus && okExtra) { pass++; console.log(`PASS ${c.name}`); }
     else { fail++; console.log(`FAIL ${c.name} (status ${res.status})`); }

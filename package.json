@@ -17,6 +17,6 @@
   },
   "dependencies": {
     "glossarist-mcp": "^0.1.0",
-    "glossarist-sparql": "^0.1.0"
+    "glossarist-sparql": "^0.1.1"
   }
 }

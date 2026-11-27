@@ -1,9 +1,17 @@
 import type { Env, Route } from "./types.js";
-import { json, problem } from "./http.js";
+import { json, problem, withConditional } from "./http.js";
 import { pickFormat, contentTypeFor } from "./negotiate.js";
 import { sparqlEndpoint } from "./sparql.js";
 import { mcpEndpoint } from "./mcp.js";
 import { llmsTxt } from "./llms-txt.js";
+import { dcatEndpoint } from "./dcat.js";
+import { provEndpoint } from "./prov.js";
+import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
+import { staticSite } from "./site.js";
+
+// Paths that must always answer with Problem Details JSON, never the HTML
+// site's 404 page. Everything else falls through to the R2-backed static site.
+const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -224,6 +232,10 @@ function openapi(_req: Request): Response {
       "/id/{register}/concept/{uuid}": { get: { summary: "Dereferenceable concept IRI (conneg; RDF forms 303 to published artifacts)", responses: { "200": { description: "json view" }, "303": { description: "artifact pointer" } } } },
       "/sparql": { get: { summary: "SPARQL 1.1 query (roll-our-own engine, read-only)", responses: { "200": { description: "ok" } } } },
       "/mcp": { post: { summary: "MCP over Streamable HTTP", responses: { "200": { description: "ok" } } } },
+      "/dcat": { get: { summary: "DCAT catalog (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" }, "406": { description: "format not offered" } } } },
+      "/prov": { get: { summary: "PROV-O build provenance (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" } } } },
+      "/ontologies": { get: { summary: "Ontology artifact index", responses: { "200": { description: "ok" } } } },
+      "/ontologies/{id}": { get: { summary: "Ontology document (conneg: JSON-LD default, Turtle)", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
     },
   });
 }
@@ -233,6 +245,10 @@ export const routes: Route[] = [
   ["GET", /^\/sparql$/, sparqlEndpoint],
   ["POST", /^\/sparql$/, sparqlEndpoint],
   ["POST", /^\/mcp$/, mcpEndpoint],
+  ["GET", /^\/dcat$/, dcatEndpoint],
+  ["GET", /^\/prov$/, provEndpoint],
+  ["GET", /^\/ontologies$/, ontologiesIndex],
+  ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
   ["GET", /^\/openapi\.json$/, openapi],
   ["GET", /^\/v1\/registers$/, registers],
@@ -249,8 +265,11 @@ export const routes: Route[] = [
   ["GET", /^\/id\/[^/]+\/concept\/[^/]+$/, iriRoute],
 ];
 
-export function dispatch(req: Request, env: Env, url: URL): Response | Promise<Response> {
+export function dispatch(req: Request, env: Env, url: URL): Promise<Response> {
   const route = routes.find(([m, re]) => m === req.method && re.test(url.pathname));
-  if (!route) return problem(404, "not_found", "No such route");
-  return route[2](req, env, url);
+  if (!route) {
+    if (API_PATH.test(url.pathname)) return Promise.resolve(problem(404, "not_found", "No such route"));
+    return staticSite(req, env, url);
+  }
+  return Promise.resolve(route[2](req, env, url)).then((res) => withConditional(res, req));
 }
