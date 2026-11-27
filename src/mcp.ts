@@ -31,6 +31,7 @@ class D1Backend implements Backend {
         lang: m.metadata?.lang as string,
         designation: m.metadata?.designation as string,
         identifier: (m.metadata?.identifier as string) || null,
+        status: (m.metadata?.status as string) ?? "unknown",
         score: Number(m.score.toFixed(4)),
       }));
   }

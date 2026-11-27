@@ -27,11 +27,11 @@ export async function adminEmbed(req: Request, env: Env, url: URL): Promise<Resp
   const cursor = Math.max(0, Number(url.searchParams.get("cursor") ?? 0));
 
   const rows = await env.DB.prepare(
-    `SELECT d.rowid, d.register, d.uuid, d.lang, d.designation, c.identifier
+    `SELECT d.rowid, d.register, d.uuid, d.lang, d.designation, c.identifier, c.status
      FROM designations d LEFT JOIN concepts c ON c.register = d.register AND c.uuid = d.uuid
      WHERE d.designation IS NOT NULL AND d.designation != ''
      ORDER BY d.rowid LIMIT ? OFFSET ?`,
-  ).bind(SEED_BATCH, cursor).all() as { results: DesignationRow[] };
+  ).bind(SEED_BATCH, cursor).all() as { results: (DesignationRow & { status: string | null })[] };
 
   const batch = rows.results;
   if (batch.length === 0) {
@@ -44,7 +44,7 @@ export async function adminEmbed(req: Request, env: Env, url: URL): Promise<Resp
     id: `${r.register}:${r.uuid}:${r.lang}`,
     values: res.data[i],
     namespace: r.lang,
-    metadata: { register: r.register, uuid: r.uuid, lang: r.lang, designation: r.designation.slice(0, 120), identifier: r.identifier ?? "" },
+    metadata: { register: r.register, uuid: r.uuid, lang: r.lang, designation: r.designation.slice(0, 120), identifier: r.identifier ?? "", status: r.status ?? "unknown" },
   }));
   await env.VECTORIZE.upsert(vectors);
 
