@@ -11,7 +11,7 @@ const opt = (k) => {
   const i = args.indexOf(`--${k}`);
   return i >= 0 ? args[i + 1] : undefined;
 };
-const DATA = resolve(opt("data") ?? "../oimlsmart/vocab/dist/data");
+const DATA = resolve(opt("data") ?? "../../oimlsmart/vocab/dist/data");
 const ONTOLOGIES = opt("ontologies") ? resolve(opt("ontologies")) : null;
 const BUILD_ID = opt("build-id") ?? `local-${new Date().toISOString().replace(/[:.]/g, "-")}`;
 const PUSH = args.includes("--push");
@@ -141,7 +141,7 @@ if (ONTOLOGIES) {
   }
 }
 
-// static site tree (e.g. --site ../oimlsmart/vocab/dist) — served at /vocab/*
+// static site tree (e.g. --site ../../oimlsmart/vocab/dist) — served at /vocab/*
 // (the build's compiled base path) under the current build id (issue #25)
 const SITE = opt("site") ? resolve(opt("site")) : null;
 if (SITE) {
