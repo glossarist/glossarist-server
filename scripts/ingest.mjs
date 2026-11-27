@@ -133,6 +133,36 @@ for (const reg of entries) {
 
 statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('build_id', ${sql(BUILD_ID)});`);
 
+// SHACL validation gate (#33): validate the aggregates against the GLOSS
+// shapes when pyshacl is available (python3 -m pip install pyshacl).
+// Best-effort: a missing validator is recorded honestly, not silently passed.
+const SHACL_SHAPES = opt("shapes") ? resolve(opt("shapes")) : null;
+const SHACL_HARNESS = opt("shacl-harness") ? resolve(opt("shacl-harness")) : null;
+if (SHACL_SHAPES && SHACL_HARNESS) {
+  const { execFileSync: exec2 } = await import("node:child_process");
+  let violations = 0, checked = 0, vacuous = 0;
+  for (const reg of entries) {
+    const dataFile = join(DATA, reg, `${reg}.jsonld`);
+    if (!existsSync(dataFile)) continue;
+    try {
+      const out = exec2("python3", [SHACL_HARNESS, SHACL_SHAPES, dataFile], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      const report = JSON.parse(out);
+      checked++;
+      if (report.targeted_nodes === 0) vacuous++;
+      if (!report.conforms) violations++;
+    } catch (e) {
+      const out = String(e.stdout || "") + String(e.stderr || "");
+      if (/No module named pyshacl/.test(out)) { checked = -1; break; }
+      violations++;
+      console.error(`SHACL violations in ${reg}:\n${out.slice(0, 2000)}`);
+    }
+  }
+  const result = checked === -1 ? "validator-unavailable" : violations > 0 ? "fail" : checked === 0 ? "not-run" : vacuous === checked ? "vacuous-pass" : "pass";
+  if (result === "fail") { console.error("SHACL gate FAILED — aborting ingest"); process.exit(1); }
+  statements.push(`INSERT OR REPLACE INTO meta(key, value) VALUES ('shacl_pass', ${sql(result)});`);
+  console.log(`shacl gate: ${result} (checked ${Math.max(checked, 0)}, vacuous ${vacuous})`);
+}
+
 // ontology artifacts (e.g. --ontologies <dir with gloss.ttl + gloss.jsonld>)
 if (ONTOLOGIES) {
   if (!existsSync(ONTOLOGIES)) { console.error(`--ontologies dir not found: ${ONTOLOGIES}`); process.exit(1); }
