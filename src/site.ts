@@ -55,7 +55,7 @@ export function siteKeyFor(pathname: string): SiteKey {
   const ext = rel.includes(".") ? (rel.split(".").pop() ?? "").toLowerCase() : "";
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
   const immutable = rel.startsWith("_astro/") || rel.startsWith("_favicon") || ext === "woff2" || ext === "woff";
-  return { key: `site/vocab/${rel}`, contentType, immutable };
+  return { key: `site/vocab/${rel}`.replace(/\/$/, ""), contentType, immutable };
 }
 
 export async function staticSite(req: Request, env: Env, url: URL): Promise<Response> {
@@ -68,7 +68,7 @@ export async function staticSite(req: Request, env: Env, url: URL): Promise<Resp
   const build = await env.DB.prepare("SELECT value FROM meta WHERE key = 'build_id'").first() as { value: string } | null;
   if (!build) return problem(503, "not_ingested", "No build ingested yet");
 
-  const base = `builds/${build.value}/${mapped.key.replace(/\/$/, "")}`;
+  const base = `builds/${build.value}/${mapped.key}`;
   let obj = await env.ARTIFACTS.get(base);
   if (!obj && (mapped.contentType.startsWith("text/html") || !mapped.key.includes("."))) {
     obj = await env.ARTIFACTS.get(`${base}/index.html`); // clean URLs: /learn → /learn/index.html
