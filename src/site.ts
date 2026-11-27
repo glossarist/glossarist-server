@@ -68,7 +68,7 @@ export async function staticSite(req: Request, env: Env, url: URL): Promise<Resp
   const build = await env.DB.prepare("SELECT value FROM meta WHERE key = 'build_id'").first() as { value: string } | null;
   if (!build) return problem(503, "not_ingested", "No build ingested yet");
 
-  const base = `builds/${build.value}/${mapped.key}`;
+  const base = `builds/${build.value}/${mapped.key.replace(/\/$/, "")}`;
   let obj = await env.ARTIFACTS.get(base);
   if (!obj && (mapped.contentType.startsWith("text/html") || !mapped.key.includes("."))) {
     obj = await env.ARTIFACTS.get(`${base}/index.html`); // clean URLs: /learn → /learn/index.html

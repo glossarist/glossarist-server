@@ -22,3 +22,11 @@ describe("siteKeyFor (R2 site tree mapping)", () => {
     expect(siteKeyFor("/vocab/bad%zz")).toBeNull();
   });
 });
+
+describe("siteKeyFor directory URLs", () => {
+  it("maps /vocab/ to the index fallback without a double slash", () => {
+    const m = siteKeyFor("/vocab/");
+    expect(m && "key" in m && m.key.endsWith("/")).toBe(false);
+    expect(m && "key" in m ? m.key : "").toBe("site/vocab");
+  });
+});
