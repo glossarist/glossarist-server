@@ -8,11 +8,12 @@ import { dcatEndpoint } from "./dcat.js";
 import { provEndpoint } from "./prov.js";
 import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
 import { conformanceEndpoint } from "./conformance.js";
+import { adminEmbed, semanticSearch } from "./semantic.js";
 import { staticSite } from "./site.js";
 
 // Paths that must always answer with Problem Details JSON, never the HTML
 // site's 404 page. Everything else falls through to the R2-backed static site.
-const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|conformance|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
+const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|conformance|admin|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -141,6 +142,7 @@ async function lineageFor(req: Request, env: Env, url: URL): Promise<Response> {
 }
 
 async function search(req: Request, env: Env, url: URL): Promise<Response> {
+  if (url.searchParams.get("semantic") === "true") return semanticSearch(req, env, url);
   const q = url.searchParams.get("q")?.trim() ?? "";
   if (!q) return problem(400, "query_required", "The q query parameter is required");
   const lang = url.searchParams.get("lang");
@@ -225,7 +227,7 @@ function openapi(_req: Request): Response {
       "/v1/concepts/{uuid}": { get: { summary: "Full concept entry (structured view)", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }, { name: "register", in: "query", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
       "/v1/concepts/{uuid}/lineage": { get: { summary: "Edition supersession chain (honest empty when unmodeled)", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
       "/v1/concepts/{uuid}/relations": { get: { summary: "Typed relations, incoming + outgoing", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/search": { get: { summary: "Designation search", parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
+      "/v1/search": { get: { summary: "Designation search", parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" } }, { name: "semantic", in: "query", schema: { type: "boolean", description: "vector search over designations (cross-lingual when lang omitted)" } }, { name: "lang", in: "query", schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
       "/v1/suggest": { get: { summary: "Designation autocomplete", parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
       "/v1/editions": { get: { summary: "Edition series (e.g. VIM 1984-2012)", responses: { "200": { description: "ok" } } } },
       "/v1/sources/{urn}": { get: { summary: "Citation resolution", parameters: [{ name: "urn", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
@@ -251,6 +253,7 @@ export const routes: Route[] = [
   ["GET", /^\/prov$/, provEndpoint],
   ["GET", /^\/ontologies$/, ontologiesIndex],
   ["GET", /^\/conformance$/, conformanceEndpoint],
+  ["GET", /^\/admin\/embed$/, adminEmbed],
   ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
   ["GET", /^\/openapi\.json$/, openapi],
