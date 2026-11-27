@@ -57,7 +57,10 @@ export async function withConditional(res: Response, req: Request): Promise<Resp
   headers.set("vary", "accept");
 
   const inm = req.headers.get("if-none-match");
-  if (inm && (inm === "*" || inm.split(",").some((t) => t.trim() === etag))) {
+  // RFC 7232: If-None-Match uses weak comparison — ignore W/ prefixes (the
+  // runtime weakens the ETag when it serves a compressed variant).
+  const weak = (v: string) => v.trim().replace(/^W\//, "");
+  if (inm && (inm.trim() === "*" || inm.split(",").some((t) => weak(t) === weak(etag)))) {
     return new Response(null, { status: 304, headers });
   }
   return new Response(body, { status: 200, headers });
