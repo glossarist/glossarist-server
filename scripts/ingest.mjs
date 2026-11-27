@@ -171,7 +171,7 @@ if (!PUSH) { console.log("dry run complete"); process.exit(0); }
 // --- R2 uploads (concurrent: the site tree is tens of thousands of objects;
 // sequential wrangler spawns would take hours) ------------------------------
 import { execFile } from "node:child_process";
-import { sleep } from "node:timers/promises";
+import { setTimeout as sleep } from "node:timers/promises";
 const R2_CONCURRENCY = 12;
 // local binary, not npx: concurrent npx invocations race on the npm cache
 const WRANGLER_BIN = resolve("node_modules/.bin/wrangler");
