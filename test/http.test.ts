@@ -48,3 +48,12 @@ describe("dispatch (HEAD)", () => {
     expect(res.headers.get("etag")).toMatch(/^"[0-9a-f]+"$/);
   });
 });
+
+describe("withConditional (weak validators)", () => {
+  it("returns 304 for a W/-weakened If-None-Match (RFC 7232 weak comparison)", async () => {
+    const first = await withConditional(json({ ok: true }), new Request("https://x/v1/registers"));
+    const etag = first.headers.get("etag")!;
+    const second = await withConditional(json({ ok: true }), new Request("https://x/v1/registers", { headers: { "if-none-match": `W/${etag}` } }));
+    expect(second.status).toBe(304);
+  });
+});
