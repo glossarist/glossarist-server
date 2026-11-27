@@ -3,6 +3,7 @@
   "main": "src/index.ts",
   "workers_dev": true,
   "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true, "head_sampling_rate": 1 },
   "routes": [{ "pattern": "vocab.oimlsmart.org", "custom_domain": true }],
   "assets": { "directory": "./public" },
   "d1_databases": [{ "binding": "DB", "database_name": "glossarist", "database_id": "19e11de1-b39c-4434-b93c-a4633ba0068f" }],
