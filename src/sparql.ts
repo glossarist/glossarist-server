@@ -11,9 +11,13 @@ let cache: Hydrated | null = null;
 async function hydrate(env: Env): Promise<QuadStore> {
   const build = await env.DB.prepare("SELECT value FROM meta WHERE key = 'build_id'").first() as { value: string } | null;
   if (!build) throw new Error("no build ingested");
-  if (cache && cache.buildId === build.value) return cache.store;
-
+  // Fingerprint = build id + register count: registers can be added to the
+  // same build id after the initial ingest (tenant onboarding), and a
+  // build-id-only cache would serve a store missing the new registers.
   const regs = await env.DB.prepare("SELECT id FROM registers").all() as { results: { id: string }[] };
+  const fingerprint = `${build.value}:${regs.results.length}`;
+  if (cache && cache.buildId === fingerprint) return cache.store;
+
   const store = new QuadStore();
   for (const { id } of regs.results) {
     const obj = await env.ARTIFACTS.get(`builds/${build.value}/${id}/${id}.jsonld`);
@@ -21,7 +25,7 @@ async function hydrate(env: Env): Promise<QuadStore> {
     const doc = JSON.parse(await obj.text());
     readJsonldIntoStore(doc, store);
   }
-  cache = { buildId: build.value, store };
+  cache = { buildId: fingerprint, store };
   return store;
 }
 
