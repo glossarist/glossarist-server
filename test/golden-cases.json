@@ -261,6 +261,39 @@
           "not-implemented"
         ]
       }
+    },
+    {
+      "name": "semantic-search",
+      "path": "/v1/search?q=instrument%20for%20measuring&semantic=true",
+      "expect": {
+        "status": 200,
+        "hits-min": 1
+      }
+    },
+    {
+      "name": "semantic-cross-lingual",
+      "path": "/v1/search?q=quantity%20intended%20to%20be%20measured&semantic=true&lang=fra",
+      "expect": {
+        "status": 200,
+        "hits-min": 1
+      }
+    },
+    {
+      "name": "site-cie-index",
+      "path": "/cie/",
+      "expect": {
+        "status": 200,
+        "content-type": "text/html"
+      }
+    },
+    {
+      "name": "sparql-cross-tenant",
+      "path": "/sparql?query=PREFIX%20skos%3A%20%3Chttp%3A%2F%2Fwww.w3.org%2F2004%2F02%2Fskos%2Fcore%23%3E%20SELECT%20%3Fc%20%3Fl%20WHERE%20%7B%20%3Fc%20skos%3AprefLabel%20%3Fl%20.%20FILTER(regex(str(%3Fc)%2C%20%22cie%22))%20%7D%20LIMIT%203",
+      "expect": {
+        "status": 200,
+        "json-results": true,
+        "bindings-min": 1
+      }
     }
   ]
 }
