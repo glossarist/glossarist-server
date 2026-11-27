@@ -35,10 +35,17 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export type SiteKey = { key: string; contentType: string; immutable: boolean } | { redirect: string } | null;
 
+// Mounted site trees under the current build: mount segment → R2 prefix.
+// Each tenant's static build is compiled with its mount as the base path.
+export const SITE_MOUNTS: Record<string, string> = {
+  vocab: "site/vocab",
+  cie: "site/cie",
+};
+
 /**
  * Map a request path to an R2 object key under the current build's site tree.
- * Returns a redirect for the origin root and the unprefixed /vocab,
- * null for traversal attempts and anything outside the mount.
+ * Returns a redirect for the origin root and unprefixed mounts,
+ * null for traversal attempts and anything outside every mount.
  */
 export function siteKeyFor(pathname: string): SiteKey {
   let path: string;
@@ -48,14 +55,17 @@ export function siteKeyFor(pathname: string): SiteKey {
     return null;
   }
   if (path === "/" || path === "") return { redirect: "/vocab/" };
-  if (path === "/vocab") return { redirect: "/vocab/" };
-  if (!path.startsWith("/vocab/") || path.includes("..") || path.includes("\0")) return null;
+  const seg = path.slice(1).split("/", 1)[0];
+  const prefix = SITE_MOUNTS[seg];
+  if (!prefix) return null;
+  if (path === `/${seg}`) return { redirect: `/${seg}/` };
+  if (path.includes("..") || path.includes("\0")) return null;
 
-  const rel = path.slice("/vocab/".length);
+  const rel = path.slice(seg.length + 2);
   const ext = rel.includes(".") ? (rel.split(".").pop() ?? "").toLowerCase() : "";
   const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
   const immutable = rel.startsWith("_astro/") || rel.startsWith("_favicon") || ext === "woff2" || ext === "woff";
-  return { key: `site/vocab/${rel}`.replace(/\/$/, ""), contentType, immutable };
+  return { key: `${prefix}/${rel}`.replace(/\/$/, ""), contentType, immutable };
 }
 
 export async function staticSite(req: Request, env: Env, url: URL): Promise<Response> {
