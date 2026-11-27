@@ -250,6 +250,17 @@
         "status": 200,
         "content-type": "application/ld+json"
       }
+    },
+    {
+      "name": "conformance-json",
+      "path": "/conformance",
+      "expect": {
+        "status": 200,
+        "contains": [
+          "sparql-subset",
+          "not-implemented"
+        ]
+      }
     }
   ]
 }

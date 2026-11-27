@@ -7,11 +7,12 @@ import { llmsTxt } from "./llms-txt.js";
 import { dcatEndpoint } from "./dcat.js";
 import { provEndpoint } from "./prov.js";
 import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
+import { conformanceEndpoint } from "./conformance.js";
 import { staticSite } from "./site.js";
 
 // Paths that must always answer with Problem Details JSON, never the HTML
 // site's 404 page. Everything else falls through to the R2-backed static site.
-const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
+const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|conformance|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
@@ -234,6 +235,7 @@ function openapi(_req: Request): Response {
       "/mcp": { post: { summary: "MCP over Streamable HTTP", responses: { "200": { description: "ok" } } } },
       "/dcat": { get: { summary: "DCAT catalog (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" }, "406": { description: "format not offered" } } } },
       "/prov": { get: { summary: "PROV-O build provenance (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" } } } },
+      "/conformance": { get: { summary: "Machine-readable conformance classes (self-checked)", responses: { "200": { description: "ok" } } } },
       "/ontologies": { get: { summary: "Ontology artifact index", responses: { "200": { description: "ok" } } } },
       "/ontologies/{id}": { get: { summary: "Ontology document (conneg: JSON-LD default, Turtle)", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
     },
@@ -248,6 +250,7 @@ export const routes: Route[] = [
   ["GET", /^\/dcat$/, dcatEndpoint],
   ["GET", /^\/prov$/, provEndpoint],
   ["GET", /^\/ontologies$/, ontologiesIndex],
+  ["GET", /^\/conformance$/, conformanceEndpoint],
   ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
   ["GET", /^\/openapi\.json$/, openapi],
