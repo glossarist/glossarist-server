@@ -33,6 +33,10 @@ for (const c of spec.cases) {
       const body = await res.json();
       okExtra = body.result?.serverInfo?.name === c.expect["server-info"];
     }
+    if (c.expect["bindings-min"] !== undefined) {
+      const body = await res.json();
+      okExtra = (body.results?.bindings?.length ?? 0) >= c.expect["bindings-min"];
+    }
     if (c.expect["etag-304"]) {
       const first = await fetch(base + c.path, { headers: { accept: c.accept ?? "application/json" } });
       const etag = first.headers.get("etag");
