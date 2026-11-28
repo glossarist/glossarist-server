@@ -8,6 +8,7 @@ import { dcatEndpoint } from "./dcat.js";
 import { provEndpoint } from "./prov.js";
 import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
 import { conformanceEndpoint } from "./conformance.js";
+import { openapiEndpoint } from "./openapi.js";
 import { adminEmbed, semanticSearch } from "./semantic.js";
 import { staticSite } from "./site.js";
 
@@ -215,35 +216,6 @@ async function iriRoute(req: Request, env: Env, url: URL): Promise<Response> {
   return new Response(null, { status: 303, headers: { location: `${row.uri_base}/data/${register}/concepts/${uuid}${ext}` } });
 }
 
-function openapi(_req: Request): Response {
-  return json({
-    openapi: "3.1.0",
-    info: { title: "Glossarist Vocab API", version: "1.0.0", description: "Machine access to glossarist terminology registers. JSON-LD-first; RDF/TBX forms are 303 pointers to the published lossless artifacts." },
-    servers: [{ url: "/" }],
-    paths: {
-      "/v1/registers": { get: { summary: "Register catalog", responses: { "200": { description: "ok" } } } },
-      "/v1/registers/{id}": { get: { summary: "Register manifest + build metadata", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
-      "/v1/registers/{id}/concepts": { get: { summary: "Paged concept index", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }, { name: "lang", in: "query", schema: { type: "string" } }, { name: "status", in: "query", schema: { type: "string" } }, { name: "cursor", in: "query", schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/concepts/{uuid}": { get: { summary: "Full concept entry (structured view)", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }, { name: "register", in: "query", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
-      "/v1/concepts/{uuid}/lineage": { get: { summary: "Edition supersession chain (honest empty when unmodeled)", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/concepts/{uuid}/relations": { get: { summary: "Typed relations, incoming + outgoing", parameters: [{ name: "uuid", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/search": { get: { summary: "Designation search", parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" } }, { name: "semantic", in: "query", schema: { type: "boolean", description: "vector search over designations (cross-lingual when lang omitted)" } }, { name: "lang", in: "query", schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/suggest": { get: { summary: "Designation autocomplete", parameters: [{ name: "q", in: "query", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" } } } },
-      "/v1/editions": { get: { summary: "Edition series (e.g. VIM 1984-2012)", responses: { "200": { description: "ok" } } } },
-      "/v1/sources/{urn}": { get: { summary: "Citation resolution", parameters: [{ name: "urn", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
-      "/v1/registers/{id}/exports/{format}": { get: { summary: "Bulk export", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }, { name: "format", in: "path", required: true, schema: { type: "string", enum: ["jsonld", "turtle", "csv", "gcr"] } }], responses: { "200": { description: "ok" } } } },
-      "/id/{register}/concept/{uuid}": { get: { summary: "Dereferenceable concept IRI (conneg; RDF forms 303 to published artifacts)", responses: { "200": { description: "json view" }, "303": { description: "artifact pointer" } } } },
-      "/sparql": { get: { summary: "SPARQL 1.1 query (roll-our-own engine, read-only)", responses: { "200": { description: "ok" } } } },
-      "/mcp": { post: { summary: "MCP over Streamable HTTP", responses: { "200": { description: "ok" } } } },
-      "/dcat": { get: { summary: "DCAT catalog (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" }, "406": { description: "format not offered" } } } },
-      "/prov": { get: { summary: "PROV-O build provenance (JSON-LD default, Turtle via conneg)", responses: { "200": { description: "ok" } } } },
-      "/conformance": { get: { summary: "Machine-readable conformance classes (self-checked)", responses: { "200": { description: "ok" } } } },
-      "/ontologies": { get: { summary: "Ontology artifact index", responses: { "200": { description: "ok" } } } },
-      "/ontologies/{id}": { get: { summary: "Ontology document (conneg: JSON-LD default, Turtle)", parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }], responses: { "200": { description: "ok" }, "404": { description: "unknown" } } } },
-    },
-  });
-}
-
 export const routes: Route[] = [
   ["GET", /^\/healthz$/, () => json({ ok: true })],
   ["GET", /^\/sparql$/, sparqlEndpoint],
@@ -256,7 +228,7 @@ export const routes: Route[] = [
   ["GET", /^\/admin\/embed$/, adminEmbed],
   ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
-  ["GET", /^\/openapi\.json$/, openapi],
+  ["GET", /^\/openapi\.json$/, openapiEndpoint],
   ["GET", /^\/v1\/registers$/, registers],
   ["GET", /^\/v1\/registers\/[^/]+$/, registerOne],
   ["GET", /^\/v1\/registers\/[^/]+\/concepts$/, concepts],
