@@ -4,6 +4,7 @@ import { pickFormat, contentTypeFor } from "./negotiate.js";
 import { sparqlEndpoint } from "./sparql.js";
 import { mcpEndpoint } from "./mcp.js";
 import { llmsTxt } from "./llms-txt.js";
+import { llmsFullTxt } from "./llms-full-txt.js";
 import { dcatEndpoint } from "./dcat.js";
 import { provEndpoint } from "./prov.js";
 import { ontologiesIndex, ontologyDoc } from "./ontologies.js";
@@ -228,6 +229,7 @@ export const routes: Route[] = [
   ["GET", /^\/admin\/embed$/, adminEmbed],
   ["GET", /^\/ontologies\/[^/]+$/, ontologyDoc],
   ["GET", /^\/llms\.txt$/, llmsTxt],
+  ["GET", /^\/llms-full\.txt$/, llmsFullTxt],
   ["GET", /^\/openapi\.json$/, openapiEndpoint],
   ["GET", /^\/v1\/registers$/, registers],
   ["GET", /^\/v1\/registers\/[^/]+$/, registerOne],
