@@ -14,7 +14,7 @@ import { staticSite } from "./site.js";
 
 // Paths that must always answer with Problem Details JSON, never the HTML
 // site's 404 page. Everything else falls through to the R2-backed static site.
-const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|conformance|admin|healthz)(\/|$)|^\/(openapi\.json|llms\.txt)$/;
+const API_PATH = /^\/(v1|sparql|mcp|id|dcat|prov|ontologies|conformance|admin|healthz)(\/|$)|^\/(openapi\.json|llms\.txt|llms-full\.txt)$/;
 
 // Content types for per-concept artifacts served by the tenant's static host.
 const ARTIFACT_EXT: Record<string, string> = {
