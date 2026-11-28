@@ -2,6 +2,15 @@
 
 Deployment: https://vocab.oimlsmart.org (branded custom domain; same Cloudflare account as the worker) and https://glossarist-server.oimlsmart-06c.workers.dev (technical fallback).
 
+## Wave 1 additions (live 2026-11-28)
+- **Semantic search** (#36): 12,365 designation vectors (Workers AI bge-m3, 1024-dim, per-language Vectorize namespaces); `/v1/search?semantic=true` live; **cross-lingual verified** (English query → French designations, score 0.62; designation-level — definition-level embeddings sharpen it, noted as future work). MCP tool `search_concepts_semantic` live (protocol 2026-07-28 negotiation + git-dep interim pending the owner's v0.2.0 tag).
+- **SHACL** (#33): `/ontologies/gloss-shacl` serves the generated 46-shape artifact (conneg; generation pipeline concept-model#96); ingest validation gate with honest statuses (pass / vacuous-pass — OIML aggregates are pure SKOS, pending the dual-typing decision glossarist-js#157 — / validator-unavailable).
+- **/conformance** (#38): 12 ISO-19135-style classes with honest statuses and evidence links.
+- **CIE tenant** (#40): cie-2011 (1,448) + cie-2020 (1,347) registers live; `/cie/` site; **cross-tenant SPARQL** (CIE + OIML in one queryable store).
+- **Browser features** (#259/#260/#266): relation graph view (vim-2012 graph: 241 nodes / 1,165 edges live; three section-only registers honestly emit empty graphs with a projected-out explanation) and curation queues (per-register worklists: e.g. oiml-complete — 0 invalid / 6,031 missing translations / 6,031 without sources), both live at /vocab/ after the 45,073-file rebuild upload (4 passes: 1,055 → 6,460 → 58 → 0 failures, all rate-limit related).
+- **/llms-full.txt** + **OpenAPI 3.1 completion** (21 paths, 5 schemas) + **AsyncAPI 3.0** (/mcp transport + planned webhook channels) + observability (Logs + Traces).
+- **Engine** (sparql#17/#19–#21): subqueries, BIND, MINUS, EXISTS/NOT EXISTS → 21/26 = 81% coverage; bench suite (4.9 ms warm total).
+
 ## Golden suite (run against production)
 **24 pass, 0 fail on both origins** (vocab.oimlsmart.org + workers.dev) — registers catalog, ETag/304, French search, refusal cases (empty query, syntax error, SPARQL DELETE, format-not-offered), honest no-hits, 404 Problem Details, SPARQL SELECT + French answer with real-binding assertions, MCP initialize + tools/list, DCAT (JSON-LD + Turtle), /prov, /ontologies (index + gloss JSON-LD/Turtle), static site (index via clean-URL fallback, 404 page, data Turtle) and API-404-stays-JSON.
 
